@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deployment Pipeline
 
 on:
   push:
@@ -9,34 +9,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout code
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: 18
 
-      # Step 3: Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # Step 4: Build the project
       - name: Build project
         run: |
-          if [ -f "package.json" ] && grep -q '"build"' package.json; then
-            npm run build
-          else
-            echo "⚠️ No build script found, skipping build."
-          fi
+          mkdir dist
+          cp -r public/* dist/ 2>/dev/null || true
+          cp -r src/* dist/
+          cp run.js dist/
+          echo "Build completed"
 
-      # Step 5: Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist  # or ./build depending on your output folder
+          publish_dir: ./dist
 
