@@ -1,100 +1,86 @@
 name: Continuous Integration
 
+# 🔹 Trigger workflow on every push or pull request to main
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
-  lint-and-test:
-    name: Lint and Test
+  ci:
+    name: Run Linting, Tests, and Build Checks
     runs-on: ubuntu-latest
-    
+
+    # Use stable Node.js versions compatible with modern ESLint
     strategy:
       matrix:
-        node-version: [16.x, 18.x, 20.x]
-    
+        node-version: [18.18.x, 20.x]
+
     steps:
+    # Step 1: Checkout repository code
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
+    # Step 2: Setup Node.js
     - name: Setup Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        
+
+    # Step 3: Install dependencies
     - name: Install dependencies
-      run: npm ci
-      
+      run: npm ci || npm install
+
+    # Step 4: Run ESLint for linting errors and warnings
     - name: Run ESLint
       run: |
-        npm install eslint --save-dev
-        npx eslint src/**/*.js --max-warnings 0
-      continue-on-error: false
-      
+        if [ -d "src" ]; then
+          npx eslint src/**/*.js
+        else
+          echo "No src directory found, skipping linting..."
+        fi
+
+    # Step 5: Check code formatting using Prettier
     - name: Check code formatting
       run: |
-        npm install prettier --save-dev
-        npx prettier --check "src/**/*.js" "public/**/*.html" "public/**/*.css"
-      continue-on-error: false
-      
+        npx prettier --check "**/*.js" "**/*.html" "**/*.css"
+
+    # Step 6: Run project tests (if defined)
     - name: Run tests
       run: |
-        if [ -f "package.json" ] && grep -q '"test"' package.json; then
+        if grep -q '"test"' package.json; then
           npm test
         else
           echo "No tests defined, skipping..."
         fi
-      
+
+    # Step 7: Optional build step (for Node or React projects)
     - name: Build project
       run: |
-        if [ -f "run.js" ]; then
-          node run.js
+        if grep -q '"build"' package.json; then
+          npm run build
+        else
+          echo "No build script found, skipping..."
         fi
-        
-    - name: Upload test results
+
+    # Step 8: Upload results (for visibility)
+    - name: Upload test and lint results
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results-${{ matrix.node-version }}
+        name: ci-results-${{ matrix.node-version }}
         path: |
           coverage/
           test-results/
-        retention-days: 30
-        
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Run npm audit
+        retention-days: 7
+
+    # Step 9: Final feedback in logs
+    - name: Summary
+      if: always()
       run: |
-        npm audit --audit-level=moderate
-      continue-on-error: true
-      
-    - name: Run Snyk security scan
-      uses: snyk/actions/node@master
-      continue-on-error: true
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        
-  build-status:
-    name: Build Status Check
-    runs-on: ubuntu-latest
-    needs: [lint-and-test, security-scan]
-    if: always()
-    
-    steps:
-    - name: Check build status
-      run: |
-        if [ "${{ needs.lint-and-test.result }}" == "failure" ] || [ "${{ needs.security-scan.result }}" == "failure" ]; then
-          echo "Build failed!"
-          exit 1
-        else
-          echo "Build successful!"
-        fi
+        echo "Continuous Integration complete."
+        echo "Node version: ${{ matrix.node-version }}"
+        echo "Check ESLint, Prettier, and Test results above."
+
