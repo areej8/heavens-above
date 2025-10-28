@@ -1,49 +1,49 @@
 name: Scheduled Maintenance Tasks
-
-# Runs automatically at 12:00 AM UTC every day
+# Runs weekly on Tuesday at 9:45 PM Pakistan Time (4:45 PM UTC)
 on:
   schedule:
-    - cron: "25 16 * * 2"
+    - cron: "45 16 * * 2"  # Tuesday at 4:45 PM UTC (9:45 PM PKT)
   workflow_dispatch:       # allows manual run too
 
 jobs:
   maintenance:
-    name: Daily Maintenance
+    name: Weekly Maintenance
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
+      
       - name: Install dependencies
         run: npm install
-
+      
       - name: Run basic checks
         run: |
-          echo "🧹 Cleaning temporary files..."
-          rm -rf temp/ logs/ || true
-          echo "✅ Checked repo health at $(date)"
-
+          mkdir -p logs
+          echo "Cleaning temporary files..." | tee -a logs/maintenance.log
+          rm -rf temp/ logs/*.old || true
+          echo "Checked repo health at $(date)" | tee -a logs/maintenance.log
+      
       - name: Verify build
         run: |
           if [ -f "package.json" ] && grep -q '"build"' package.json; then
-            npm run build || echo "Build failed but continuing..."
+            npm run build 2>&1 | tee -a logs/maintenance.log || echo "Build failed but continuing..." | tee -a logs/maintenance.log
           else
-            echo "No build script found, skipping..."
+            echo "No build script found, skipping..." | tee -a logs/maintenance.log
           fi
-
+      
       - name: Log task completion
-        run: echo "🕐 Scheduled maintenance completed successfully at $(date)"
-
-      - name: Upload logs (optional)
+        run: echo "Scheduled maintenance completed successfully at $(date)" | tee -a logs/maintenance.log
+      
+      - name: Upload logs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: daily-maintenance-logs
-          path: .
-          retention-days: 3
+          name: weekly-maintenance-logs-${{ github.run_number }}
+          path: logs/
+          retention-days: 7
 

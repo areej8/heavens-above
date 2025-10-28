@@ -58,5 +58,5 @@ jobs:
       # Step 7: Report CI Status
       - name: Report Status
         run: |
-          echo "✅ CI completed successfully for Node.js version ${{ matrix.node-version }}"
+          echo "CI completed successfully for Node.js version ${{ matrix.node-version }}"
 
