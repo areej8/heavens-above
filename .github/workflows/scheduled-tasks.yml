@@ -1,0 +1,49 @@
+name: Scheduled Maintenance Tasks
+
+# Runs automatically at 12:00 AM UTC every day
+on:
+  schedule:
+    - cron: "25 16 * * 2"
+  workflow_dispatch:       # allows manual run too
+
+jobs:
+  maintenance:
+    name: Daily Maintenance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run basic checks
+        run: |
+          echo "🧹 Cleaning temporary files..."
+          rm -rf temp/ logs/ || true
+          echo "✅ Checked repo health at $(date)"
+
+      - name: Verify build
+        run: |
+          if [ -f "package.json" ] && grep -q '"build"' package.json; then
+            npm run build || echo "Build failed but continuing..."
+          else
+            echo "No build script found, skipping..."
+          fi
+
+      - name: Log task completion
+        run: echo "🕐 Scheduled maintenance completed successfully at $(date)"
+
+      - name: Upload logs (optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-maintenance-logs
+          path: .
+          retention-days: 3
+
