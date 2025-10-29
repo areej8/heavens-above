@@ -11,6 +11,9 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write    # ✅ Allows pushing to another branch (required for gh-pages)
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
