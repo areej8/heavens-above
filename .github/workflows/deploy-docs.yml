@@ -7,6 +7,9 @@ on:
       - "docs/**"
       - ".github/workflows/deploy-docs.yml"
 
+permissions:
+  contents: write   # allow pushing to gh-pages branch
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -21,15 +24,14 @@ jobs:
           node-version: 18
 
       - name: Install documentation dependencies
-        run: |
-          npm install -g docsify-cli
+        run: npm install -g docsify-cli
 
       - name: Build documentation
         run: |
           docsify init ./docs || echo "Docs already initialized"
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
