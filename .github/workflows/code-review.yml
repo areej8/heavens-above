@@ -16,7 +16,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Step 2: Setup Node.js (adjust version if needed)
+      # Step 2: Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -31,22 +31,37 @@ jobs:
       - name: Run ESLint (Code Style Check)
         run: |
           npm install eslint --save-dev
-          npx eslint . || echo "Lint warnings found"
+          npx eslint . && echo "ESLINT_STATUS=pass" >> $GITHUB_ENV || echo "ESLINT_STATUS=warnings" >> $GITHUB_ENV
 
-      # Step 5: Run Code Quality Scan using SonarJS (lightweight)
+      # Step 5: Run Code Quality Scan using SonarJS
       - name: Run Code Quality Check
         run: |
           npm install eslint-plugin-sonarjs --save-dev
-          npx eslint . --plugin sonarjs || echo "Quality issues found"
+          npx eslint . --plugin sonarjs && echo "QUALITY_STATUS=pass" >> $GITHUB_ENV || echo "QUALITY_STATUS=issues" >> $GITHUB_ENV
 
       # Step 6: Basic Security Scan using npm audit
       - name: Security Vulnerability Scan
         run: |
-          npm audit --audit-level=moderate || echo "Security issues found"
+          npm audit --audit-level=moderate && echo "SECURITY_STATUS=pass" >> $GITHUB_ENV || echo "SECURITY_STATUS=vulnerabilities" >> $GITHUB_ENV
 
-      # Step 7: Provide review summary feedback
+      # Step 7: Provide detailed review summary feedback
       - name: Post Review Summary
         run: |
-          echo "✅ Automated Code Review completed for PR #${{ github.event.pull_request.number }}"
-          echo "Linting, quality, and security checks have been executed."
-
+          echo "CODE REVIEW SUMMARY" >> $GITHUB_STEP_SUMMARY
+          echo "===================" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Pull Request: #${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "Branch: ${{ github.head_ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "Review Date: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "CHECK RESULTS:" >> $GITHUB_STEP_SUMMARY
+          echo "-------------" >> $GITHUB_STEP_SUMMARY
+          echo "- ESLint Code Style: ${{ env.ESLINT_STATUS == 'pass' && 'PASS - No linting issues found' || 'WARNINGS - Code style issues detected' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Code Quality (SonarJS): ${{ env.QUALITY_STATUS == 'pass' && 'PASS - No quality issues found' || 'ISSUES - Code quality concerns identified' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Security Audit: ${{ env.SECURITY_STATUS == 'pass' && 'PASS - No vulnerabilities found' || 'VULNERABILITIES - Security issues detected' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "SUMMARY:" >> $GITHUB_STEP_SUMMARY
+          echo "-------" >> $GITHUB_STEP_SUMMARY
+          echo "Automated code review completed. Please review any warnings or issues identified above." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Note: This is an automated review. Manual code review is still recommended." >> $GITHUB_STEP_SUMMARY
