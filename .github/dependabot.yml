@@ -1,7 +1,11 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"          # location of package.json
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: "weekly"    # checks once per week
+      interval: "weekly"
 
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
