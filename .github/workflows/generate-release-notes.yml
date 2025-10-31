@@ -1,0 +1,31 @@
+name: Generate Release Notes
+
+on:
+  push:
+    tags:
+      - 'v*'  
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate release notes file
+        run: |
+          echo "## Release Notes for $GITHUB_REF_NAME" > release-notes.md
+          echo "" >> release-notes.md
+          git log -10 --pretty=format:"- %s" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "Generated automatically by GitHub Actions." >> release-notes.md
+
+      - name: Commit and push release notes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add release-notes.md
+          git commit -m "Auto-generated release notes for $GITHUB_REF_NAME"
+          git push
+
