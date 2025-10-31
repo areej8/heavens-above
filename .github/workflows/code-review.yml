@@ -14,7 +14,7 @@ jobs:
     steps:
       # Step 1: Checkout the code from the PR
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Step 2: Setup Node.js
       - name: Setup Node.js
