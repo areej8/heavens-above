@@ -1,31 +1,36 @@
-name: Generate Release Notes
+name: Custom Workflow - Generate Release Notes
 
 on:
   push:
     tags:
-      - 'v*'  
+      - 'v*' # triggers on version tags like v1.0, v2.0, etc.
 
 jobs:
-  generate:
+  generate-release-notes:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # ensures full history for tags
 
-      - name: Generate release notes file
+      - name: Switch to main branch
+        run: |
+          git fetch origin main
+          git checkout main
+
+      - name: Generate release notes
         run: |
           echo "## Release Notes for $GITHUB_REF_NAME" > release-notes.md
           echo "" >> release-notes.md
-          git log -10 --pretty=format:"- %s" >> release-notes.md
-          echo "" >> release-notes.md
-          echo "Generated automatically by GitHub Actions." >> release-notes.md
+          git log -1 --pretty=format:"- %s" >> release-notes.md
 
       - name: Commit and push release notes
         run: |
           git config user.name "github-actions"
-          git config user.email "actions@github.com"
+          git config user.email "github-actions@github.com"
           git add release-notes.md
-          git commit -m "Auto-generated release notes for $GITHUB_REF_NAME"
-          git push
+          git commit -m "Auto-generated release notes for $GITHUB_REF_NAME" || echo "No changes to commit"
+          git push origin main
 
